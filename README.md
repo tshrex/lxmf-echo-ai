@@ -153,3 +153,23 @@ Environmental:
 **Educational Tools: Mesh networking and AI demonstrations**
 
 **Community Networks: Neighborhood-scale mesh monitoring**
+
+# License
+This project is licensed under the Reticulum License - see the LICENSE file for details.
+
+# Acknowledgments
+
+Reticulum by Mark Qvist
+
+LXMF for reliable message delivery
+
+Google Gemini for AI capabilities
+
+# Support
+Issues: Use the GitHub issue tracker
+
+Discussions: Join the Reticulum discussions
+
+Documentation: Check the Reticulum documentation
+
+Note: This project is in active development. Features and APIs may change between versions.
