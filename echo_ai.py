@@ -44,14 +44,14 @@ logger = logging.getLogger("echo-ai")
 # ------------------ JSON SERIALIZATION HELPERS ------------------ #
 
 def safe_json(obj):
-    """Safely serializes objects, handling bytes by encoding them to Base64."""
+    """Safely serializes objects, handling bytes by encoding them to Hex."""
     if isinstance(obj, bytes):
         try:
             # Try decoding as UTF-8 first (since many RNS fields are text)
             return obj.decode("utf-8")
         except UnicodeDecodeError:
-            # Fallback to Base64 if UTF-8 fails (e.g., binary data like hashes)
-            return base64.b64encode(obj).decode("ascii")
+            # Fallback to Hex encoding for binary data like hashes/IDs
+            return obj.hex()
     # For any other unsupported types, raise an error as usual
     raise TypeError(f"Type {obj.__class__.__name__} not serializable")
 
@@ -310,7 +310,10 @@ def handle_incoming(message):
             
             # Decode the binary fields (like location)
             new_telemetry_data = decode_telemetry_data(unpacked_data)
-            RNS.log(f"Decoded fields data: {new_telemetry_data}", RNS.LOG_INFO)
+            
+            # FIX: Use serialize_telemetry to log the hex-encoded data instead of the raw Python dict
+            logged_json_data = serialize_telemetry(new_telemetry_data)
+            RNS.log(f"Decoded fields data: {logged_json_data}", RNS.LOG_INFO)
 
             # 3. SAVE the newly decoded data to the database
             # This call now establishes its own thread-safe connection and INSERTS a new record
