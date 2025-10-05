@@ -12,15 +12,14 @@ import base64
 import struct
 
 # ------------------ CONFIGURATION ------------------ #
+# V1.2.0 - Updated to support telemetry history
 CONFIG_DIR = os.path.expanduser("~/.nomadmb")
 STORAGE_PATH = os.path.join(CONFIG_DIR, "storage")
 IDENTITY_PATH = os.path.join(STORAGE_PATH, "echoidentity")
 ANNOUNCE_PATH = os.path.join(STORAGE_PATH, "echoannounce")
-# NEW: Path for the SQLite database file
 TELEMETRY_DB_PATH = os.path.join(STORAGE_PATH, "telemetry.db")
 DISPLAY_NAME = "Echo/AI"
-# V1
-ANNOUNCE_INTERVAL = 60  # seconds
+ANNOUNCE_INTERVAL = 1800  # seconds
 
 # API Key from environment variable or fallback
 load_dotenv()
@@ -42,9 +41,8 @@ logger = logging.getLogger("echo-ai")
 # Each database operation will now create its own connection.
 
 # ------------------ JSON SERIALIZATION HELPERS ------------------ #
-
 def safe_json(obj):
-    """Safely serializes objects, handling bytes by encoding them to Hex."""
+    """Serializes objects, handling bytes by encoding them to hex or utf-8."""
     if isinstance(obj, bytes):
         try:
             # Try decoding as UTF-8 first (since many RNS fields are text)
@@ -64,14 +62,12 @@ def serialize_telemetry(telemetry_data):
     # that haven't been handled by decode_telemetry_data
     return json.dumps(telemetry_data, default=safe_json)
 
-
 # ------------------ DATABASE HANDLER ------------------ #
 
 def get_db_connection():
     """Establishes and returns a new thread-local SQLite connection."""
     # This function is called within the thread that needs the connection.
     return sqlite3.connect(TELEMETRY_DB_PATH)
-
 
 def init_db():
     """Initializes the SQLite database connection and creates the telemetry table."""
@@ -240,6 +236,7 @@ def ai_chatbot_reply(message_content, historic_telemetry_list):
         preprompt = f"""
         You are the Echo/AI Assistant, running on the Reticulum mesh network.
         The user's current sensor data and a history of the last few readings are provided below.
+        look at the difference between the NEWEST DATA and PREVIOUS DATA POINT 1..2..etc to immediately spot trends.
         Analyze this data to answer the user's query, looking for trends or sudden changes in metrics like battery, light, or location.
         
         {historic_data_str}
@@ -258,9 +255,11 @@ def ai_chatbot_reply(message_content, historic_telemetry_list):
         12 angular_velocity → [x, y, z] (float)
         14 proximity (bool)
         15 information.contents (string)
-        25 rns_transport (network transport stats & interfaces, keep as structured JSON object)
+        25 rns_transport (network transport stats & interfaces, keep as structured JSON object 
+        (Reticulum distinguishes between two types of network nodes. 
+        All nodes on a Reticulum network are Reticulum Instances, and some are also Transport Nodes)
         
-        Always be concise, helpful, and acknowledge the source of information if it comes from sensor data, and mention if a trend was observed.
+        Always be concise, helpful, acknowledge the source of information if it comes from sensor data, and mention if a trend was observed.
         """
     else:
         # Fallback if no telemetry is ever loaded/saved
